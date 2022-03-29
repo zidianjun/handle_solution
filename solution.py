@@ -17,18 +17,7 @@ vow_dict = {'i': 15006, 'u': 12481, 'an': 5419, 'ing': 3938, 'ian': 3681, 'eng':
 
 N = 23196
 
-d = {'consonant': 0, 'vowel': 1, 'tune': 2}
-
-def _segment(string):
-    tune = string[-1]
-    s = string[:-1]
-    if len(s) == 1 or s[0] in ['a', 'e', 'o']:
-        consonant, vowel = '', s
-    else:
-        ind = 2 if s[1] == 'h' else 1
-        consonant = s[:ind]
-        vowel = s[ind:]
-    return consonant, vowel, tune
+d = {'consonant': 0, 'vowel': 1, 'tune': 2}  # The order of each list.
 
 def _score(con_list, vow_list, weight_con=3, weight_vow=1):
     score = 0
@@ -41,14 +30,10 @@ def _all_diff(l):
     return len(set(l)) == len(l)
 
 def _parse(word):
-    con_list, vow_list, tune_list = [], [], []
-    strings = pinyin(word, style=Style.TONE3, neutral_tone_with_five=True)
-    for each_string in strings:
-        consonant, vowel, tune = _segment(each_string[0])
-        con_list.append(consonant)
-        vow_list.append(vowel)
-        tune_list.append(tune)
-    return [con_list, vow_list, tune_list]
+    con_list = pinyin(word, style=Style.INITIALS, strict=False, neutral_tone_with_five=True)
+    vow_list = pinyin(word, style=Style.FINALS, strict=False, neutral_tone_with_five=True)
+    tune_list = pinyin(word, style=Style.TONE3, strict=False, neutral_tone_with_five=True)
+    return [[i[0] for i in con_list], [i[0] for i in vow_list], [i[0][-1] for i in tune_list]]
 
 def _solve_blue(blue, parse_list):
     pos, key, value = blue
