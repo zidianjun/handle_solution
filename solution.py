@@ -3,19 +3,19 @@ from pypinyin import pinyin, Style
 import numpy as np
 import matplotlib.pyplot as plt
 
-con_dict = {'y': 9129, 'j': 6742, 'sh': 6431, 'x': 5554, 'zh': 5239, 'l': 5208,
-            'b': 5020, 'd': 4668, 'h': 4406, 'q': 4123, 'g': 3924, 'w': 3797, 'f': 3758,
-            'm': 3717, 'ch': 3555, 't': 3462, 'r': 2432, 's': 2316, 'z': 2092, 'k': 1532,
-            'c': 1522, '': 1482, 'p': 1336, 'n': 1341}
+con_dict = {'y': 11394, 'j': 8658, 'sh': 8028, 'x': 7010, 'zh': 6786, 'l': 6517,
+            'b': 6488, 'd': 6037, 'h': 5443, 'g': 5117, 'q': 5094, 'w': 4869, 'm': 4655,
+            'f': 4636, 'ch': 4500, 't': 4232, 'r': 3368, 's': 2865, 'z': 2748, 'c': 2063,
+            'k': 2010, '': 1905, 'n': 1837, 'p': 1696}
 
-vow_dict = {'i': 15006, 'u': 12481, 'an': 5419, 'ing': 3938, 'ian': 3681, 'eng': 3480,
-            'ou': 3412, 'ong': 3311, 'en': 3175, 'ao': 3142, 'ang': 3095, 'e': 3050, 
-            'in': 2848, 'ai': 2539, 'uan': 2391, 'ei': 2308, 'uo': 2300, 'a': 2164,
-            'ui': 2160, 'un': 1746, 'iao': 1663, 'iu': 1336, 'ie': 1314, 'iang': 1237,
-            'ue': 1011, 'o': 944, 'ia': 804, 'uang': 741, 'ua': 613, 'er': 545, 'v': 319,
-            'iong': 317, 'uai': 256, 've': 40}
+vow_dict = {'i': 19191, 'u': 12816, 'an': 6885, 'ing': 5067, 'ian': 4513, 'eng': 4237,
+            'ong': 4127, 'en': 4125, 'ou': 4097, 'ao': 4045, 'ang': 4000, 'e': 3868, 
+            'in': 3540, 'ai': 3318, 'uo': 2975, 'ei': 2903, 'a': 2780,
+            'ui': 2655, 'iao': 2096, 'uan': 1834, 'iu': 1752, 'ie': 1679, 'iang': 1611,
+            've': 1338, 'un': 1331, 'van': 1236, 'o': 1210, 'ia': 1068, 'uang': 980,
+            'vn': 872, 'er': 798, 'ua': 780, 'v': 3530, 'iong': 355, 'uai': 344}
 
-N = 23196
+N = 29489
 
 d = {'consonant': 0, 'vowel': 1, 'tune': 2}  # The order of each list.
 
@@ -29,11 +29,21 @@ def _score(con_list, vow_list, weight_con=3, weight_vow=1):
 def _all_diff(l):
     return len(set(l)) == len(l)
 
-def _parse(word):
-    con_list = pinyin(word, style=Style.INITIALS, strict=False, neutral_tone_with_five=True)
-    vow_list = pinyin(word, style=Style.FINALS, strict=False, neutral_tone_with_five=True)
-    tune_list = pinyin(word, style=Style.TONE3, strict=False, neutral_tone_with_five=True)
-    return [[i[0] for i in con_list], [i[0] for i in vow_list], [i[0][-1] for i in tune_list]]
+def _parse(word, incorrect_mode=True):
+    cons = pinyin(word, style=Style.INITIALS, strict=False, neutral_tone_with_five=True)
+    vows = pinyin(word, style=Style.FINALS, strict=False, neutral_tone_with_five=True)
+    tunes = pinyin(word, style=Style.TONE3, strict=False, neutral_tone_with_five=True)
+    con_list, vow_list, tune_list = [], [], []
+    for i in range(len(cons)):
+        con_list.append(cons[i][0])
+        if incorrect_mode:
+            temp = ('v' + vows[i][0][1:] if vows[i][0].startswith('u') and
+                    cons[i][0] in ['j', 'q', 'x', 'y'] else vows[i][0])
+        else:
+            temp = vows[i][0]
+        vow_list.append(temp)
+        tune_list.append(tunes[i][0][-1])
+    return con_list, vow_list, tune_list
 
 def _solve_blue(blue, parse_list):
     pos, key, value = blue
@@ -47,14 +57,20 @@ def _solve_gray(gray, parse_list):
     pos, key, value = gray
     return value not in parse_list[d[key]]
 
-def _possible(parse_list, blue, yellow, gray):
+def _possible(parse_list, blue, yellow, gray, verbose=False):
     for b in blue:
+        if verbose:
+            print(b, _solve_blue(b, parse_list))
         if not _solve_blue(b, parse_list):
             return False
     for y in yellow:
+        if verbose:
+            print(y, _solve_yellow(y, parse_list))
         if not _solve_yellow(y, parse_list):
             return False
     for g in gray:
+        if verbose:
+            print(g, _solve_gray(g, parse_list))
         if not _solve_gray(g, parse_list):
             return False
     return True
@@ -158,6 +174,9 @@ def solve(trial='研经铸史', blue=[[3, 'tune'], [4, 'vowel']], yellow=[[1, 'c
             else:
                 gray.append([pos, key, trial_list[d[key]][pos-1]])
 
+    # parse_list = _parse("与世无争")
+    # print(_possible(parse_list, blue, yellow, gray, verbose=True))
+
     f = open('./data/all.txt', 'r')
     for i, line in enumerate(f.readlines()):
         parse_list = _parse(line[:-1])
@@ -170,10 +189,10 @@ def solve(trial='研经铸史', blue=[[3, 'tune'], [4, 'vowel']], yellow=[[1, 'c
 if 'con_dict' not in locals() or 'vow_dict' or locals():
     con_dict, vow_dict = stat()
 
-# plot_bar(con_dict, vow_dict)
+plot_bar(con_dict, vow_dict)
 # initial_guess(con_dict, vow_dict, thres=None, weight_con=3, weight_vow=1)
-solve(blue=[],
-      yellow=[[1, 'tune'], [2, 'tune'], [3, 'vowel'], [4, 'consonant'], [4, 'tune']])
+solve(blue=[[2, 'tune']],
+      yellow=[[1, 'vowel'], [2, 'consonant'], [4, 'vowel']])
 
 
 
