@@ -57,20 +57,14 @@ def _solve_gray(gray, parse_list):
     pos, key, value = gray
     return value not in parse_list[d[key]]
 
-def _possible(parse_list, blue, yellow, gray, verbose=False):
-    for b in blue:
-        if verbose:
-            print(b, _solve_blue(b, parse_list))
+def _possible(parse_list, blue_list, yellow_list, gray_list):
+    for b in blue_list:
         if not _solve_blue(b, parse_list):
             return False
-    for y in yellow:
-        if verbose:
-            print(y, _solve_yellow(y, parse_list))
+    for y in yellow_list:
         if not _solve_yellow(y, parse_list):
             return False
-    for g in gray:
-        if verbose:
-            print(g, _solve_gray(g, parse_list))
+    for g in gray_list:
         if not _solve_gray(g, parse_list):
             return False
     return True
@@ -93,7 +87,7 @@ def stat(f=open('./data/all.txt', 'r')):
     
     return con_dict, vow_dict
 
-def initial_guess(con_dict, vow_dict, thres=None, weight_con=3, weight_vow=1):
+def initial_guess(thres=None, weight_con=3, weight_vow=1):
     f = open('./data/all.txt', 'r')
     max_score = 0. if thres is None else thres
 
@@ -103,12 +97,10 @@ def initial_guess(con_dict, vow_dict, thres=None, weight_con=3, weight_vow=1):
         score = _score(parse_list[0], parse_list[1], weight_con=weight_con, weight_vow=weight_vow)
         if (score > max_score and '5' not in parse_list[2] and _all_diff(parse_list[2])
             and _all_diff(parse_list[0]) and _all_diff(parse_list[1])):
-            if thres is None:
-                max_score = score
-            else:
-                print("较好的初始猜测是 is %s (%.2f)\n" %(line, max_score))
-            best = line
-    print("最佳的初始猜测是 %s (%.6f)\n" %(best, max_score))
+            best, max_score = line, score
+            if thres is not None:
+                print("较好的初始猜测是 is %s (分数为%.2f)\n" %(line, max_score))
+    print("最佳的初始猜测是 %s (分数为%.2f)\n" %(best, max_score))
 
 def plot_bar(con_dict, vow_dict):
     plt.figure(figsize=(20, 10))
@@ -142,7 +134,7 @@ def plot_bar(con_dict, vow_dict):
 
     plt.savefig('./fig/freq.png')
 
-def solve(trial='研经铸史', blue=[[3, 'tune'], [4, 'vowel']], yellow=[[1, 'consonant']]):
+def solve(blue, yellow, trial='研经铸史'):
     '''
     Parameters: trial: str
                        In general '研经铸史' is proved to be most efficient
@@ -164,23 +156,22 @@ def solve(trial='研经铸史', blue=[[3, 'tune'], [4, 'vowel']], yellow=[[1, 'c
 
     gray = []
     trial_list = _parse(trial)
+    blue_list, yellow_list, gray_list = [], [], []
 
     for pos in [1, 2, 3, 4]:
         for key in ['consonant', 'vowel', 'tune']:
+            tmp = [pos, key, trial_list[d[key]][pos-1]]
             if [pos, key] in blue:
-                blue[blue.index([pos, key])] += [trial_list[d[key]][pos-1]]
+                blue_list.append(tmp)
             elif [pos, key] in yellow:
-                yellow[yellow.index([pos, key])] += [trial_list[d[key]][pos-1]]
+                yellow_list.append(tmp)
             else:
-                gray.append([pos, key, trial_list[d[key]][pos-1]])
-
-    # parse_list = _parse("与世无争")
-    # print(_possible(parse_list, blue, yellow, gray, verbose=True))
+                gray_list.append(tmp)
 
     f = open('./data/all.txt', 'r')
     for i, line in enumerate(f.readlines()):
         parse_list = _parse(line[:-1])
-        if _possible(parse_list, blue, yellow, gray):
+        if _possible(parse_list, blue_list, yellow_list, gray_list):
             print("可能是 %s" %(line))
 
 
@@ -189,10 +180,10 @@ def solve(trial='研经铸史', blue=[[3, 'tune'], [4, 'vowel']], yellow=[[1, 'c
 if 'con_dict' not in locals() or 'vow_dict' or locals():
     con_dict, vow_dict = stat()
 
-plot_bar(con_dict, vow_dict)
-# initial_guess(con_dict, vow_dict, thres=None, weight_con=3, weight_vow=1)
-solve(blue=[[2, 'tune']],
-      yellow=[[1, 'vowel'], [2, 'consonant'], [4, 'vowel']])
+# plot_bar(con_dict, vow_dict)
+initial_guess(thres=0.25, weight_con=3, weight_vow=1)
+# solve(blue=[[3, 'tune'], [4, 'vowel']],
+      # yellow=[[1, 'consonant']])
 
 
 
