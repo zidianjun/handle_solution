@@ -53,9 +53,20 @@ def _solve_yellow(yellow, parse_list):
     pos, key, value = yellow
     return (parse_list[d[key]][pos-1] != value) and (value in parse_list[d[key]])
 
-def _solve_gray(gray, parse_list):
+def _solve_gray(gray, parse_list, blue_list):
     pos, key, value = gray
-    return value not in parse_list[d[key]]
+    if value not in parse_list[d[key]]:
+        return True
+    else:
+        # If one value is blue somewhere, the same values elsewhere
+        # will be labeled as gray. This could be an issue when
+        # the trial is not defaulted and have overlapping values.
+        # Though the value shows in gray_list, 
+        # as long as the value shows in blue_list, it is still possible. 
+        for blue in blue_list:
+            if value in blue:
+                return True
+    return False
 
 def _possible(parse_list, blue_list, yellow_list, gray_list):
     for b in blue_list:
@@ -65,7 +76,7 @@ def _possible(parse_list, blue_list, yellow_list, gray_list):
         if not _solve_yellow(y, parse_list):
             return False
     for g in gray_list:
-        if not _solve_gray(g, parse_list):
+        if not _solve_gray(g, parse_list, blue_list):
             return False
     return True
 
@@ -134,23 +145,33 @@ def plot_bar(con_dict, vow_dict):
 
     plt.savefig('./fig/freq.png')
 
-def solve(blue, yellow, trial='研经铸史'):
+def solve(blue, yellow, trial='研经铸史', possible_answer=None):
     '''
-    Parameters: trial: str
+    Parameters: 
+                blue: list
+                      blue is a list like [[pos, key], [pos, key], ...],
+                      showing where the blue hints are.
+                      pos is the position.
+                      key is the type, including 'consonant', 'vowel', and 'tune'.
+                      If no blue, leave it as blank [].
+
+                yellow: list
+                        All the same as blue.
+
+                trial: str
                        In general '研经铸史' is proved to be most efficient
                        and thus defaulted.
 
-                blue: list
-                       blue is a list like [[pos, key], [pos, key], ...],
-                       showing where the blue hints are.
-                       pos is the position.
-                       key is the type, including 'consonant', 'vowel', and 'tune'.
-                       If no blue, leave it as blank [].
-
-                yellow: all the same as blue.
+                possible_answer: list, optional, defaulted to be None.
+                                 If there are multiple answers from the first trial
+                                 and the second trial is not correct,
+                                 iterate the possible answers,
+                                 and the third time will take the intersection
+                                 of the possible answers of the previous two.
     
-    Returns: None.
-             It prints all the possible answers.
+    Returns:
+             answer: list
+                     It lists all the possible answers that are also printed.
 
     '''
 
@@ -167,13 +188,18 @@ def solve(blue, yellow, trial='研经铸史'):
                 yellow_list.append(tmp)
             else:
                 gray_list.append(tmp)
-
+    
     f = open('./data/all.txt', 'r')
+    answer = []
     for i, line in enumerate(f.readlines()):
         parse_list = _parse(line[:-1])
         if _possible(parse_list, blue_list, yellow_list, gray_list):
-            print("可能是 %s" %(line))
-
+            if (possible_answer is None) or (
+                possible_answer is not None and line[:-1] in possible_answer):
+                print("可能是 %s" %(line))
+                answer.append(line[:-1])
+    print("Solution ended.\n")
+    return answer
 
 
 
@@ -181,9 +207,15 @@ if 'con_dict' not in locals() or 'vow_dict' or locals():
     con_dict, vow_dict = stat()
 
 # plot_bar(con_dict, vow_dict)
-initial_guess(thres=0.25, weight_con=3, weight_vow=1)
-# solve(blue=[[3, 'tune'], [4, 'vowel']],
-      # yellow=[[1, 'consonant']])
+# initial_guess(thres=0.25, weight_con=3, weight_vow=1)
+
+a1 = solve(blue=[[1, 'tune']],
+           yellow=[[3, 'tune']])
+
+# a2 = solve(blue=[[1, 'tune'], [2, 'tune'], [3, 'tune'], [4, 'consonant']],
+#            yellow=[],
+#            trial='龙凤呈祥',
+#            possible_answer=a1)
 
 
 
