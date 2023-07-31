@@ -7,6 +7,6 @@ An example:
 
 ![answer](https://github.com/zidianjun/handle_solution/assets/25077804/431c3798-dd04-4384-a05e-08034a7c3938)
 
-The best initial guess is "研经铸史" based on the distribution of the consonants and vowels (./fig/freq.png).
+The best initial guess is "研经铸史" based on the following distribution of all the consonants and vowels in idioms.
 
 ![freq](https://github.com/zidianjun/handle_solution/assets/25077804/94f85d34-5522-43cc-b984-d6efbef9875e)
